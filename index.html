@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyBi Interactive Lab | Killercoda Deneyimi</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Üst Menü Çubuğu */
+    header {
+      height: 48px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+    .brand {
+      font-weight: 700;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+    }
+    .timer-badge {
+      background: #21262d;
+      border: 1px solid #30363d;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #7ee787;
+      font-family: monospace;
+    }
+
+    /* Çalışma Alanı */
+    .workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 48px);
+    }
+
+    /* Sol Panel (Senaryo ve Görevler) */
+    .scenario-pane {
+      width: 42%;
+      background: #0d1117;
+      border-right: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .content-area {
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .step-indicator {
+      font-size: 12px;
+      color: #58a6ff;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 20px;
+      color: #f0f6fc;
+      margin-bottom: 14px;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #8b949e;
+      margin-bottom: 16px;
+    }
+
+    /* Killercoda Tıklanabilir Komut Kutusu */
+    .clickable-cmd {
+      background: #161b22;
+      border: 1px solid #388bfd;
+      border-radius: 6px;
+      padding: 12px;
+      cursor: pointer;
+      margin: 12px 0;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .clickable-cmd:hover {
+      background: #1c2128;
+      border-color: #58a6ff;
+    }
+    .clickable-cmd code {
+      font-family: monospace;
+      color: #79c0ff;
+      font-size: 14px;
+      display: block;
+    }
+    .clickable-cmd .hint {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    /* Alt Navigasyon Butonları */
+    .footer-nav {
+      padding: 16px 24px;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-secondary {
+      background: #21262d;
+      border-color: #30363d;
+      color: #c9d1d9;
+    }
+    .btn-primary {
+      background: #238636;
+      color: #fff;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Sağ Panel (Terminal) */
+    .terminal-pane {
+      width: 58%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+    }
+    .terminal-pane iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Kopyalama Bildirimi (Toast) */
+    #toast {
+      visibility: hidden;
+      min-width: 200px;
+      background-color: #238636;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 10px;
+      position: fixed;
+      z-index: 1000;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.3s, fadeout 0.3s 1.7s;
+    }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-cloud"></i>
+      <span>Killercoda Sandbox &bull; Linux Playground</span>
+    </div>
+    <div class="timer-badge">
+      <i class="fa-regular fa-clock"></i> Süre: <span id="countdown">45:00</span>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- Sol Bölüm: Adım Adım Senaryo -->
+    <div class="scenario-pane">
+      <div class="content-area" id="scenario-content"></div>
+      <div class="footer-nav">
+        <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()"><i class="fa-solid fa-arrow-left"></i> Önceki</button>
+        <button class="btn btn-primary" id="next-btn" onclick="nextStep()">Sonraki Adım <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Sağ Bölüm: Canlı Ubuntu 22.04 Render Konteyneri -->
+    <div class="terminal-pane">
+      <iframe src="https://docker-file-nhlk.onrender.com/" title="Ubuntu 22.04 Terminal"></iframe>
+    </div>
+  </div>
+
+  <div id="toast">Komut kopyalandı! Terminale yapıştırın.</div>
+
+  <script>
+    const steps = [
+      {
+        title: "Sistem ve Dağıtım Kontrolü",
+        desc: "Killercoda ortamına hoş geldiniz. İlk görev olarak şu anda çalıştığınız Ubuntu çekirdeğini ve dağıtım sürümünü doğrulayın.",
+        command: "cat /etc/os-release",
+        hint: "Kutuya tıklayarak komutu kopyalayın ve sağdaki terminalde çalıştırın."
+      },
+      {
+        title: "Test Dosyası ve Dizin Oluşturma",
+        desc: "Şimdi sistemde yeni bir çalışma klasörü ve Killercoda test dosyası oluşturalım.",
+        command: "mkdir -p /root/lab && echo 'Killercoda basariyla kuruldu' > /root/lab/durum.txt && cat /root/lab/durum.txt",
+        hint: "Bu komut klasör açar ve içine test metni yazar."
+      },
+      {
+        title: "Sistem Kaynaklarını İnceleme",
+        desc: "Konteynerin bellek (RAM) ve işlemci durumunu canlı olarak görmek için sistem izleme aracını çalıştırın.",
+        command: "free -h && htop",
+        hint: "htop ekranından çıkmak için klavyeden 'q' tuşuna basın."
+      }
+    ];
+
+    let currentStep = 0;
+
+    function renderStep() {
+      const step = steps[currentStep];
+      const content = `
+        <div class="step-indicator">Adım ${currentStep + 1} / ${steps.length}</div>
+        <h2>${step.title}</h2>
+        <p>${step.desc}</p>
+        <div class="clickable-cmd" onclick="copyCommand('${step.command}')">
+          <code>$ ${step.command}</code>
+          <div class="hint"><i class="fa-regular fa-copy"></i> ${step.hint}</div>
+        </div>
+      `;
+      document.getElementById('scenario-content').innerHTML = content;
+      document.getElementById('prev-btn').disabled = currentStep === 0;
+      document.getElementById('next-btn').innerHTML = currentStep === steps.length - 1 ? 'Tamamla <i class="fa-solid fa-check"></i>' : 'Sonraki Adım <i class="fa-solid fa-arrow-right"></i>';
+    }
+
+    function nextStep() {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        renderStep();
+      } else {
+        alert("Tebrikler! Senaryoyu başarıyla tamamladınız.");
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        renderStep();
+      }
+    }
+
+    function copyCommand(cmd) {
+      navigator.clipboard.writeText(cmd).then(() => {
+        const toast = document.getElementById("toast");
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+      });
+    }
+
+    let timeLeft = 45 * 60;
+    setInterval(() => {
+      if (timeLeft <= 0) return;
+      timeLeft--;
+      const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const s = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('countdown').textContent = `${m}:${s}`;
+    }, 1000);
+
+    renderStep();
+  </script>
+</body>
+</html>
